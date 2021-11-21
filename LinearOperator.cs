@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -30,9 +30,10 @@ namespace LinearAlgebra
             var result = new List<Vector>();
             var solution = matrix.Transpose();
             solution = GaussJordanMethod.StepwiseForm(solution, false);
+            var zero = new Vector(matrix.ColumnSize);
             for(int i = 0; i < solution.StringSize; i++)
             {
-                if (solution.GetString(i)[solution.ColumnSize - 1] != 0)
+                if (!solution.GetString(i).Equals(zero))
                     result.Add(solution.GetString(i));
             }
             return result.ToArray();
