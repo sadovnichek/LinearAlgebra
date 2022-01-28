@@ -379,5 +379,14 @@ namespace LinearAlgebra
                                       new Vector(2, -3, 1));
             Assert.AreEqual(expected, B.matrix);
         }
+
+        [Test]
+
+        public static void SwapCoordinatesInVector()
+        {
+            Vector v = new Vector(1, 2, 3, 4, 5);
+            v = v.Swap(1, 3);
+            Assert.AreEqual(v, new Vector(1, 4, 3, 2, 5));
+        }
     }
 }

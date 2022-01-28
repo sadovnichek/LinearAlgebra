@@ -66,6 +66,7 @@
     <Compile Include="Tests.cs" />
     <Compile Include="Vector.cs" />
     <Compile Include="VectorSpace.cs" />
+    <Compile Include="Сombinatorics.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

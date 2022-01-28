@@ -171,6 +171,11 @@ namespace LinearAlgebra
             return new Fraction(v, 1);
         }
 
+        public int IntValue()
+        {
+            return (int)Numerator / (int)Denominator;
+        }
+
         public static Fraction Abs(Fraction value)
         {
             if (value < 0)
