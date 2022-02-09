@@ -6,28 +6,44 @@ using System.Linq;
 
 namespace LinearAlgebra
 {
-    public class Vector : IEnumerable<Fraction>
+    public class Vector : IEnumerable<double>
     {
-        private readonly List<Fraction> coordinates;
+        private readonly List<double> coordinates = new List<double>();
         public int Size => coordinates.Count();
-        public double Lenght => Math.Sqrt((this * this).ApproximateValue);
+        public double Lenght => Math.Sqrt((this * this));
 
-        public Vector(params Fraction[] source)
+        private static double Convert(double value)
         {
-            coordinates = source.ToList();
+            var x = Math.Round(value, 6);
+            if (Math.Abs(Math.Round(value) - x) <= 1e-3)
+                x = (int)Math.Round(x);
+            else if (Math.Abs(x) <= 1e-3)
+                x = 0;
+            return x;
         }
 
-        public Vector(IEnumerable<Fraction> source)
+        public Vector(params double[] source)
         {
-            coordinates = source.ToList();
+            foreach(var x in source)
+            {
+                coordinates.Add(Convert(x));
+            }
+        }
+
+        public Vector(IEnumerable<double> source)
+        {
+            foreach (var x in source)
+            {
+                coordinates.Add(Convert(x));
+            }
         }
 
         public Vector(int size)
         {
-            coordinates = Enumerable.Repeat(Fraction.Zero, size).ToList();
+            coordinates = Enumerable.Repeat(0d, size).ToList();
         }
 
-        public Fraction this[int index]
+        public double this[int index]
         {
             get
             {
@@ -39,7 +55,7 @@ namespace LinearAlgebra
             set
             {
                 if (index >= 0 && index < Size)
-                    coordinates[index] = value;
+                    coordinates[index] = Convert(value);
                 else
                     throw new IndexOutOfRangeException();
             }
@@ -65,20 +81,20 @@ namespace LinearAlgebra
             return a + (-1) * b;
         }
 
-        public static Vector operator *(Fraction t, Vector a)
+        public static Vector operator *(double t, Vector a)
         {
-            List<Fraction> sum = new List<Fraction>();
+            var sum = new List<double>();
 
             for (int i = 0; i < a.Size; i++)
             {
-                sum.Add(a.coordinates[i] * t);
+                sum.Add(Convert(a.coordinates[i] * t));
             }
             return new Vector(sum);
         }
 
-        public static Fraction operator *(Vector a, Vector b)
+        public static double operator *(Vector a, Vector b)
         {
-            Fraction dotProduct = 0;
+            var dotProduct = 0d;
             for(int i = 0; i < a.Size; i++)
             {
                 dotProduct += a[i] * b[i];
@@ -86,6 +102,17 @@ namespace LinearAlgebra
             return dotProduct;
         }
 
+        public static bool operator ==(Vector a, Vector b)
+        {
+            return a.Equals(b);
+        }
+
+        public static bool operator !=(Vector a, Vector b)
+        {
+            return !a.Equals(b);
+        }
+
+        // Returns index of first non-zero element in vector. Otherwise -1
         public int FindFirstNonZeroElementIndex()
         {
             for(int i = 0; i < Size; i++)
@@ -98,14 +125,14 @@ namespace LinearAlgebra
 
         public Vector Normilize()
         {
-            return Fraction.Parse(1 / Lenght) * this;
+            return (1 / Lenght) * this;
         }
 
-        public IEnumerator<Fraction> GetEnumerator()
+        public IEnumerator<double> GetEnumerator()
         {
             foreach(var x in coordinates)
             {
-                yield return x;
+                yield return Convert(x);
             }
         }
 
@@ -117,7 +144,17 @@ namespace LinearAlgebra
         public override string ToString()
         {
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
-            return "[" +  string.Join(", ", coordinates.Select(x => Math.Round(x.ApproximateValue, 4))) + "]";
+            return "[" +  string.Join(", ", coordinates.Select(x => Math.Round(x, 3))) + "]";
+        }
+
+        public string GetLatexNotation()
+        {
+            var result = @"$\begin{pmatrix}";
+            for(int i = 0; i < Size; i++)
+            {
+                result += coordinates[i] + ((i != Size - 1) ? ",& " : @"\end{pmatrix}$");
+            }
+            return result;
         }
 
         public override bool Equals(object obj)
@@ -131,7 +168,7 @@ namespace LinearAlgebra
                 {
                     for(int i = 0; i < Size; i++)
                     {
-                        if (vector_obj[i] != coordinates[i])
+                        if (Math.Abs(vector_obj[i] - coordinates[i]) > 1e-3)
                             return false;
                     }
                     return true;
@@ -140,17 +177,38 @@ namespace LinearAlgebra
             return false;
         }
 
+        public override int GetHashCode()
+        {
+            int hash = 1;
+            foreach(var elem in this)
+            {
+                hash = (hash << 3) + hash ^ (int)elem;
+            }
+            return hash;
+        }
+
         public Vector Swap(int i, int j)
         {
             var min_index = Math.Min(i, j);
             var max_index = Math.Max(i, j);
-            var newCoordinates = new List<Fraction>();
+            var newCoordinates = new List<double>();
             newCoordinates.AddRange(coordinates.Take(min_index));
             newCoordinates.Add(coordinates[max_index]);
             newCoordinates.AddRange(coordinates.Skip(1 + min_index).Take(max_index - min_index - 1));
             newCoordinates.Add(coordinates[min_index]);
             newCoordinates.AddRange(coordinates.Skip(1 + max_index).Take(coordinates.Count - max_index - 1));
             return new Vector(newCoordinates);
+        }
+
+        public static Vector GetRandomVector(int size, int maxValue)
+        {
+            var vector = new Vector(size);
+            var x = RandomProvider.Get();
+            for (int i = 0; i < size; i++)
+            {
+                vector.coordinates[i] = Math.Pow(-1, x.Next(2)) * x.Next(maxValue);
+            }
+            return vector;
         }
     }
 }

@@ -1,18 +1,29 @@
-﻿using System.Globalization;
+﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace LinearAlgebra
 {
     public class LinearManifold : Vector
     {
-        public Vector ShiftVector;
+        private Vector ShiftVector;
 
-        public Vector[] SubspaceBasis;
+        private Vector[] SubspaceBasis;
 
         public LinearManifold(Vector shiftVector, Vector[] subspaceBasis)
         {
             ShiftVector = shiftVector;
             SubspaceBasis = subspaceBasis;
+        }
+
+        public List<Vector> GetSubspaceBasis()
+        {
+            return SubspaceBasis.ToList();
+        }
+
+        public Vector GetShiftVector()
+        {
+            return ShiftVector;
         }
 
         public override string ToString()

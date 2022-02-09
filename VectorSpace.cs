@@ -32,7 +32,7 @@ namespace LinearAlgebra
             }
             var scalars = GaussJordanMethod.Solve(matrix, b, false);
             if(scalars is LinearManifold)
-                scalars = (scalars as LinearManifold).ShiftVector;
+                scalars = (scalars as LinearManifold).GetShiftVector();
             var result = new Vector(Vectors[0].Size);
             for(int i = 0; i < Vectors.Length; i++)
             {

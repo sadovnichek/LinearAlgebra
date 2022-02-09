@@ -6,22 +6,63 @@ namespace LinearAlgebra
 {
     public class GaussJordanMethod
     {
-        public static Matrix StepwiseForm(Matrix m, bool output)
+        private static Matrix DropDownZeroStrings(Matrix m, int activeBlockSize = 0)
         {
-            var x = (Fraction[,])m.Data.Clone();
-            var matrix = new Matrix(x);
+            if(activeBlockSize == 0)
+                activeBlockSize = m.ColumnSize;
+            for(int i = 0; i < m.StringSize - 1; i++)
+            {
+                if(new Vector(m.GetString(i).Reverse().Take(activeBlockSize)) == new Vector(activeBlockSize))
+                {
+                    for(int j = i + 1; j < m.StringSize; j++)
+                    {
+                        if (new Vector(m.GetString(j).Reverse().Take(activeBlockSize)) != new Vector(activeBlockSize))
+                            m.ReplaceStrings(i, j);
+                    }
+                }
+            }
+            return m;
+        }
+
+        public static Matrix StepwiseForm(Matrix m, bool output, int activeBlockSize = 0)
+        {
+            m = DropDownZeroStrings(m, activeBlockSize);
+            var copy = (double[,])m.Data.Clone();
+            var matrix = new Matrix(copy);
             var previousStartIndex = int.MaxValue;
+            var activePart = new Matrix(m.StringSize, m.ColumnSize);
+            var passivePart = new Matrix(m.StringSize, m.ColumnSize);
+            if (activeBlockSize == 0)
+                activeBlockSize = m.ColumnSize;
+            else
+            {
+                passivePart = new Matrix();
+                activePart = new Matrix();
+                for (int i = 0; i < m.ColumnSize - activeBlockSize; i++)
+                {
+                    passivePart = passivePart.AddColumn(m.GetColumn(i));
+                }
+                for (int i = m.ColumnSize - activeBlockSize; i < m.ColumnSize; i++)
+                {
+                    activePart = activePart.AddColumn(m.GetColumn(i));
+                }
+                matrix = activePart;
+            }
             for (int i = 0; i < matrix.StringSize; i++)
             {
                 var startIndex = matrix.GetString(i).FindFirstNonZeroElementIndex();
                 if (previousStartIndex > startIndex && startIndex != -1)
                 {
-                    if(i > 1)
+                    if (i > 1)
+                    {
                         matrix.ReplaceStrings(i - 1, i);
+                        passivePart.ReplaceStrings(i - 1, i);
+                    }
                     else
                     {
                         var index = matrix.GetColumn(i).FindFirstNonZeroElementIndex();
                         matrix.ReplaceStrings(index, i);
+                        passivePart.ReplaceStrings(index, i);
                     }    
                 }
                 startIndex = matrix.GetString(i).FindFirstNonZeroElementIndex();
@@ -35,16 +76,22 @@ namespace LinearAlgebra
                         matrix.Print();
                     var t = -1 * second / first;
                     var firstVector = t * matrix.GetString(i);
+                    var passiveVector = t * passivePart.GetString(i);
                     matrix.SetString(i + s, matrix.GetString(i + s) + firstVector);
+                    passivePart.SetString(i + s, passivePart.GetString(i + s) + passiveVector);
                 }
                 previousStartIndex = startIndex;
             }
-            return matrix;
+            if (activeBlockSize != m.ColumnSize)
+                return DropDownZeroStrings(passivePart.AddMatrix(matrix), activeBlockSize);
+            return DropDownZeroStrings(matrix);
         }
 
         public static Matrix IdentityForm(Matrix m, bool output)
         {
             var matrix = StepwiseForm(m, output);
+            if (output)
+                matrix.Print();
             for (int i = matrix.StringSize - 1; i > 0; i--)
             {
                 var startIndex = matrix.GetString(i).FindFirstNonZeroElementIndex();
@@ -53,17 +100,17 @@ namespace LinearAlgebra
                     if (startIndex == -1) continue;
                     var first = matrix[i, startIndex];
                     if (first == 0) continue;
-                    if (output)
-                        matrix.Print();
+                    
                     var second = matrix[i - s, startIndex];
                     var t = -1 * second / first;
                     var firstVector = t * matrix.GetString(i);
                     matrix.SetString(i - s, matrix.GetString(i - s) + firstVector);
+                    if (output)
+                        matrix.Print();
                     startIndex = matrix.GetString(i).FindFirstNonZeroElementIndex();
-                    
                 }
             }
-            matrix.DeleteZeroStrings();
+            matrix = matrix.DeleteZeroStrings();
             for (int i = 0; i < matrix.StringSize; i++)
             {
                 var currentVector = matrix.GetString(i);
@@ -121,7 +168,7 @@ namespace LinearAlgebra
         private static Vector[] FindFundamentalSystem(Matrix matrix)
         {
             var vectors = matrix.ColumnSize - matrix.Rank;
-            var result = new Matrix(new Fraction[vectors, 0]); // векторов * зависимые переменный
+            var result = new Matrix(new double[vectors, 0]); // векторов * зависимые переменный
             var freeVariablesIndexes = FindFreeVariablesIndexes(matrix);
             if (freeVariablesIndexes.Count != vectors)
                 throw new ArgumentException("Number of free variables must be equal number of vectors");
@@ -130,7 +177,8 @@ namespace LinearAlgebra
             {
                 if (freeVariablesIndexes.Contains(i))
                 {
-                    var f = new Vector(Enumerable.Repeat(Fraction.Zero, onePlace).Append(1).Concat(Enumerable.Repeat(Fraction.Zero, vectors - onePlace - 1)));
+                    var f = new Vector(Enumerable.Repeat(0d, onePlace).Append(1)
+                        .Concat(Enumerable.Repeat(0d, vectors - onePlace - 1)));
                     result = result.AddColumn(f);
                     onePlace++;
                 }

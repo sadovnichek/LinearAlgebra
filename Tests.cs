@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 
 namespace LinearAlgebra
 {
@@ -72,10 +73,10 @@ namespace LinearAlgebra
                                     new Vector(-5, -8, -9),
                                     new Vector(2, 3, 3));
             var b = new Matrix(new Vector(3, 5, 6),
-                                            new Vector(0, new Fraction(1, 3), 1),
+                                            new Vector(0, 1.0/3.0, 1),
                                             new Vector(0, 0, 0));
             var sum = new Matrix(new Vector(6, 10, 12),
-                                 new Vector(-5, new Fraction(-23, 3), -8),
+                                 new Vector(-5, -23.0/3.0, -8),
                                  new Vector(2, 3, 3));
             Assert.AreEqual(a + b, sum);
         }
@@ -98,7 +99,7 @@ namespace LinearAlgebra
                                     new Vector(-5, -8, -9),
                                     new Vector(2, 3, 3));
             var stepwiseMatrix = new Matrix(new Vector(3, 5, 6),
-                                            new Vector(0, new Fraction(1, 3), 1),
+                                            new Vector(0, 1.0/3.0, 1),
                                             new Vector(0, 0, 0));
             matrix = GaussJordanMethod.StepwiseForm(matrix, false);
             Assert.AreEqual(matrix, stepwiseMatrix);
@@ -115,47 +116,6 @@ namespace LinearAlgebra
                                             new Vector(0, 0, 2));
             matrix = GaussJordanMethod.StepwiseForm(matrix, false);
             Assert.AreEqual(matrix, stepwiseMatrix);
-        }
-
-        [Test]
-        public static void FractionOperations()
-        {
-            var f1 = new Fraction(3, 7);
-            var f2 = new Fraction(2, 9);
-            Assert.AreEqual(f1 + f2, new Fraction(41, 63));
-            Assert.AreEqual(f1 - f2, new Fraction(13, 63));
-            Assert.AreEqual(f1 * f2, new Fraction(2, 21));
-            Assert.AreEqual(f1 / f2, new Fraction(27, 14));
-        }
-
-        [Test]
-        public static void FractionsEquality()
-        {
-            var f1 = new Fraction(3, 7);
-            var f2 = new Fraction(6, 14);
-            Assert.AreEqual(f1, f2);
-        }
-
-        [Test]
-        public static void FractionsParsing()
-        {
-            var input = "3/8";
-            var fraction = Fraction.Parse(input);
-            Assert.AreEqual(fraction, new Fraction(3, 8));
-            var number = 44;
-            Assert.AreEqual(Fraction.Parse(number), new Fraction(44, 1));
-        }
-
-        [Test]
-        public static void FractionsCompare()
-        {
-            var f1 = new Fraction(3, 7);
-            var f2 = new Fraction(6, 15);
-            Assert.IsTrue(f1 > f2);
-            var f3 = new Fraction(1, 4);
-            Assert.IsTrue(f3 <= f1);
-            Assert.AreEqual(f3, 0.25);
-            Assert.AreEqual(new Fraction(314, 100), Fraction.Parse(Math.PI));
         }
 
         [Test]
@@ -181,7 +141,7 @@ namespace LinearAlgebra
             var b = new Vector(1, 2, 1);
 
             var solution = GaussJordanMethod.Solve(matrix, b, false);
-            Assert.AreEqual(solution.ToString(), "[0.5, 0, 0, 0] + <[1.5, 1, 0, 0],[-0.0625, 0, -1.375, 1]>");
+            Assert.AreEqual(solution.ToString(), "[0.5, 0, 0, 0] + <[1.5, 1, 0, 0],[-0.062, 0, -1.375, 1]>");
         }
 
         [Test]
@@ -247,58 +207,114 @@ namespace LinearAlgebra
             Assert.AreEqual(MatrixEquation.Solve(A, B), x);
         }
 
-        //[Test]
-        //public static void EigenValuesAndVectors1()
-        //{
-        //    var matrix = new Matrix(new Vector(4, 5, 6),
-        //                            new Vector(-5, -7, -9),
-        //                            new Vector(2, 3, 4));
-        //    var eval = LinearOperator.GetEigenValues(matrix);
-        //    Assert.AreEqual(eval.ToArray(), new Fraction[] { 0, 1 });
-        //    var evec = LinearOperator.GetEigenVectors(matrix, 0);
-        //    Assert.AreEqual(evec, new Vector[] { new Vector(1, -2, 1) });
-        //    evec = LinearOperator.GetEigenVectors(matrix, 1);
-        //    Assert.AreEqual(evec, new Vector[] { new Vector(3, -3, 1) });
-        //}
+        [Test]
+        public static void CalculateEigenvalues()
+        {
+            var matrix = new Matrix(new Vector(4, 5, 6),
+                                    new Vector(-5, -7, -9),
+                                    new Vector(2, 3, 4));
+            var linear_operator = new LinearOperator(matrix);
+            var eval = linear_operator.GetEigenvalues();
+            Assert.AreEqual(new double[] { 0, 0, 1 }, eval.ToArray());
+        }
 
-        //[Test]
-        //public static void EigenValuesAndVectors2()
-        //{
-        //    var matrix = new Matrix(new Vector(-1, 1, 0),
-        //                            new Vector(0, 0, 1),
-        //                            new Vector(0, 1, 1));
-        //    var eval = LinearOperator.GetEigenValues(matrix);
-        //    Assert.AreEqual(eval.ToArray(), new Fraction[] { -1, new Fraction(-309, 500), new Fraction(809, 500) });
-        //    var evec = LinearOperator.GetEigenVectors(matrix, -1);
-        //    Assert.AreEqual(evec, new Vector[] { new Vector(1, 0, 0) });
-        //    evec = LinearOperator.GetEigenVectors(matrix, new Fraction(-309, 500));
-        //    Assert.True(evec.Length == 1);
-        //    var eigenVector = evec.First();
-        //    var mul = eigenVector.Aggregate((x, y) => x * y).PreciseValue;
-        //    Assert.AreEqual(mul, 6.8541, 1e-3);
-        //    evec = LinearOperator.GetEigenVectors(matrix, new Fraction(809, 500));
-        //    Assert.True(evec.Length == 1);
-        //    eigenVector = evec.First();
-        //    mul = eigenVector.Aggregate((x, y) => x * y).PreciseValue;
-        //    Assert.AreEqual(mul, 0.1459, 1e-3);
-        //}
+        [Test]
+        public static void CalculateEigenvectors()
+        {
+            var matrix = new Matrix(new Vector(-1, 1, 0),
+                                    new Vector(0, 0, 1),
+                                    new Vector(0, 1, 1));
+            var linOperator = new LinearOperator(matrix);
+            var eigenvalues = linOperator.GetEigenvalues();
+            var actualEigenvectors = new List<Vector>();
+            var expectedEigenvectors = new List<Vector>()
+            {
+                new Vector(1, 0, 0),
+                new Vector(-4.236, -1.618, 1),
+                new Vector(0.236, 0.618, 1)
+            };
+            foreach (var e in eigenvalues)
+            {
+                var eigenvectors = linOperator.GetEigenvectors(e);
+                foreach (Vector v in eigenvectors)
+                {
+                    Assert.IsTrue(expectedEigenvectors.Contains(v));
+                    actualEigenvectors.Add(v);
+                }
+            }
+            Assert.AreEqual(expectedEigenvectors.Count, actualEigenvectors.Count);
+        }
 
-        //[Test]
-        //public static void Diagonalize()
-        //{
-        //    var matrix = new Matrix(new Vector(5, -1, -1),
-        //                            new Vector(-1, 5, -1),
-        //                            new Vector(-1, -1, 5));
-        //    var d = LinearOperator.Diagonalize(matrix);
-        //    var transitionMatrix = new Matrix(new Vector(1, -1, -1),
-        //                                      new Vector(1, 1, 0),
-        //                                      new Vector(1, 0, 1));
-        //    var diagonilizedMatrix = new Matrix(new Vector(3, 0, 0),
-        //                                      new Vector(0, 6, 0),
-        //                                      new Vector(0, 0, 6));
-        //    Assert.AreEqual(d[0], transitionMatrix);
-        //    Assert.AreEqual(d[1], diagonilizedMatrix);
-        //}
+        [Test]
+        public static void Diagonalize1()
+        {
+            var matrix = new Matrix(new Vector(5, -1, -1),
+                                    new Vector(-1, 5, -1),
+                                    new Vector(-1, -1, 5));
+            var linOperator = new LinearOperator(matrix);
+            var d = linOperator.Diagonolize();
+            var transitionMatrix = new Matrix(new Vector(1, -1, -1),
+                                              new Vector(1, 1, 0),
+                                              new Vector(1, 0, 1));
+            var diagonilizedMatrix = new Matrix(new Vector(3, 0, 0),
+                                                new Vector(0, 6, 0),
+                                                new Vector(0, 0, 6));
+            Assert.AreEqual(d[0], transitionMatrix);
+            Assert.AreEqual(d[1], diagonilizedMatrix);
+        }
+
+        [Test]
+        public static void Diagonalize2()
+        {
+            var matrix = new Matrix(new Vector(1, 0, 0),
+                                    new Vector(0, 2, 0),
+                                    new Vector(0, 0, 3));
+            var linOperator = new LinearOperator(matrix);
+            var d = linOperator.Diagonolize();
+            var transitionMatrix = new Matrix(new Vector(1, 0, 0),
+                                              new Vector(0, 1, 0),
+                                              new Vector(0, 0, 1));
+            var diagonilizedMatrix = new Matrix(new Vector(1, 0, 0),
+                                                new Vector(0, 2, 0),
+                                                new Vector(0, 0, 3));
+            Assert.AreEqual(d[0], transitionMatrix);
+            Assert.AreEqual(d[1], diagonilizedMatrix);
+        }
+
+        [Test]
+        public static void DiagonolizedThrowException()
+        {
+            var matrix = new Matrix(new Vector(1, 0, 0),
+                                    new Vector(1, 1, 1),
+                                    new Vector(1, 0, 1));
+            var linOperator = new LinearOperator(matrix);
+            try
+            {
+                var d = linOperator.Diagonolize();
+            }
+            catch(InvalidOperationException e)
+            {
+                Assert.IsTrue(e.Message.Contains("Use Jordan normal form"));
+            }
+        }
+
+        [Test]
+        public static void Diagonalize3()
+        {
+            var matrix = new Matrix(new Vector(1, 1, 1),
+                                    new Vector(1, 1, 1),
+                                    new Vector(1, 1, 1));
+            var linOperator = new LinearOperator(matrix);
+            var d = linOperator.Diagonolize();
+            var transitionMatrix = new Matrix(new Vector(-1, -1, 1),
+                                              new Vector(1, 0, 1),
+                                              new Vector(0, 1, 1));
+            var diagonilizedMatrix = new Matrix(new Vector(0, 0, 0),
+                                                new Vector(0, 0, 0),
+                                                new Vector(0, 0, 3));
+            Assert.AreEqual(d[0], transitionMatrix);
+            Assert.AreEqual(d[1], diagonilizedMatrix);
+        }
 
         [Test]
         public static void KernelAndImageBasis()
@@ -313,8 +329,8 @@ namespace LinearAlgebra
             var kernel = linearOperator.FindKernelBasis();
             var image = linearOperator.FindImageBasis();
 
-            Assert.IsTrue(kernel.Length == 2);
-            Assert.IsTrue(image.Length == 2);
+            Assert.IsTrue(kernel.Count == 2);
+            Assert.IsTrue(image.Count == 2);
 
             Assert.AreEqual(kernel, new Vector[] { new Vector(1, -2, 1, 0), new Vector(2, -3, 0, 1) });
             Assert.AreEqual(image, new Vector[] { new Vector(1, 4, 5, 8), new Vector(0, -5, -4, -9) });
@@ -381,12 +397,57 @@ namespace LinearAlgebra
         }
 
         [Test]
-
         public static void SwapCoordinatesInVector()
         {
             Vector v = new Vector(1, 2, 3, 4, 5);
             v = v.Swap(1, 3);
             Assert.AreEqual(v, new Vector(1, 4, 3, 2, 5));
+        }
+
+        [Test]
+        public static void GetPermutations()
+        {
+            Vector v = new Vector(1, 2, 3);
+            var actual = Combinatorics.GetAllPermutations(v);
+            foreach(var elem in actual)
+                Console.WriteLine(elem.GetHashCode()); 
+            var expected = new List<Vector>
+            {
+                new Vector(1, 2, 3),
+                new Vector(3, 2, 1),
+                new Vector(2, 3, 1),
+                new Vector(1, 3, 2),
+                new Vector(3, 1, 2),
+                new Vector(2, 1, 3)
+            };
+            Assert.True(new HashSet<Vector>(actual).SetEquals(expected));
+        }
+
+        [Test]
+        public static void SolveEquation()
+        {
+            var equation = new Vector(6, -7, 0, 1);
+            var roots = Polynomial.Solve(equation);
+            Assert.IsTrue(roots.Count == 3);
+            Assert.IsTrue(roots.Contains(1) && roots.Contains(2) && roots.Contains(-3));
+
+            equation = new Vector(-3, 0, 1);
+            roots = Polynomial.Solve(equation);
+            Assert.IsTrue(roots.Count == 2);
+            Assert.IsTrue(roots.Contains(1.732) && roots.Contains(-1.732));
+        }
+
+        [Test]
+        public static void FindCharacteristicPolynomial()
+        {
+            var matrix = new Matrix(new Vector(1, -1, 0, 2),
+                                    new Vector(-1, 0, 0, 1),
+                                    new Vector(1, 2, -1, 0),
+                                    new Vector(-2, 0, -1, -1));
+            var linOperator = new LinearOperator(matrix);
+            var characteristicPolynomial = linOperator.GetCharacteristicPolynomial();
+            Console.WriteLine(characteristicPolynomial);
+            Assert.AreEqual(new Vector(-10, 3, 2, 1, 1), characteristicPolynomial);
         }
     }
 }

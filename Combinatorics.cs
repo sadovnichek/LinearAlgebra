@@ -6,19 +6,19 @@ using System.Threading.Tasks;
 
 namespace LinearAlgebra
 {
-    public static class Сombinatorics
+    public class Combinatorics
     {
-        public static long factorial(int n)
+        public static long Factorial(int n)
         {
             if (n == 0 || n == 1) return 1;
-            else return n * factorial(n - 1);
+            else return n * Factorial(n - 1);
         }
 
-        public static IEnumerable<Vector> getAllPermutations(Vector v)
+        public static IEnumerable<Vector> GetAllPermutations(Vector v)
         {
             var result = v;
             yield return result;
-            for (int c = 0; c < factorial(v.Size) - 1; c++)
+            for (int c = 0; c < Factorial(v.Size) - 1; c++)
             {
                 var max_j = 0;
                 for (int j = 0; j < result.Size - 1; j++)

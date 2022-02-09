@@ -2,63 +2,101 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace LinearAlgebra
 {
     public class Matrix
     {
-        public Fraction[,] Data;
+        public double[,] Data;
+
+        private int precision = 6;
 
         public int StringSize => Data.GetLength(0);
         public int ColumnSize => Data.GetLength(1);
         public bool IsSquare => StringSize == ColumnSize;
+
+        public bool IsDiagonal => IsMatrixDiagonal();
         public int Rank => GetRank();
-        public Fraction Determinant => GetDeterminant();
+        public double Determinant => GetDeterminant();
+
+        private double Convert(double value)
+        {
+            var x = Math.Round(value, precision);
+            if (Math.Abs(Math.Round(value) - x) <= 1e-3)
+                x = (int)Math.Round(x);
+            return x;
+        }
 
         public Matrix(params Vector[] strings)
         {
-            Data = new Fraction[strings.Length, strings[0].Size];
+            Data = new double[strings.Length, strings[0].Size];
 
             for(int i = 0; i < strings.Length; i++)
             {
                 for(int j = 0; j < strings[0].Size; j++)
                 {
-                    Data[i, j] = strings[i][j];
+                    Data[i, j] = Convert(strings[i][j]);
                 }
             }
         }
 
-        public Matrix(Fraction [,] matrix)
+        public Matrix(List<Vector> strings)
         {
-            Data = matrix;
+            Data = new double[strings.Count, strings[0].Size];
+
+            for (int i = 0; i < strings.Count; i++)
+            {
+                for (int j = 0; j < strings[0].Size; j++)
+                {
+                    Data[i, j] = Convert(strings[i][j]);
+                }
+            }
+        }
+
+        public Matrix(double [,] matrix)
+        {
+            Data = new double[matrix.GetLength(0), matrix.GetLength(1)];
+            for(int i = 0;i < matrix.GetLength(0);i++)
+            {
+                for(int j = 0;j < matrix.GetLength(1); j++)
+                {
+                    Data[i, j] = Convert(matrix[i, j]);
+                }
+            }
         }
 
         public Matrix(int stringSize, int columnSize)
         {
-            Data = new Fraction[stringSize, columnSize];
+            Data = new double[stringSize, columnSize];
             for (int i = 0; i < Data.GetLength(0); i++)
             {
                 for (int j = 0; j < Data.GetLength(1); j++)
                 {
-                    Data[i, j] = Fraction.Zero;
+                    Data[i, j] = 0;
                 }
             }
         }
 
-        public Fraction this[int i, int j]
+        public Matrix()
+        {
+            Data = new double[0, 0];
+        }
+
+        public double this[int i, int j]
         {
             get { return Data[i, j]; }
-            set 
+            set
             {
                 if (i < 0 || j < 0 || i > StringSize || j > ColumnSize)
                     throw new IndexOutOfRangeException();
-                Data[i, j] = value; 
+                Data[i, j] = Convert(value);
             }
         }
 
         public static Matrix GetIdentityMatrix(int n)
         {
-            var result = new Fraction[n,n];
+            var result = new double[n,n];
             for(int i = 0; i < n; i++)
             {
                 for(int j = 0; j < n; j++)
@@ -76,7 +114,7 @@ namespace LinearAlgebra
         {
             if (index >= 0 && index < StringSize)
             {
-                var result = new List<Fraction>();
+                var result = new List<double>();
                 for (int j = 0; j < ColumnSize; j++)
                     result.Add(Data[index, j]);
                 return new Vector(result);
@@ -89,9 +127,9 @@ namespace LinearAlgebra
         {
             if (index >= 0 && index < StringSize)
             {
-                for(int j = 0; j < ColumnSize; j++)
+                for (int j = 0; j < ColumnSize; j++)
                 {
-                    Data[index, j] = v[j];
+                    Data[index, j] = Convert(v[j]);
                 }
             }
             else
@@ -104,7 +142,7 @@ namespace LinearAlgebra
             {
                 for (int j = 0; j < StringSize; j++)
                 {
-                    Data[j, index] = v[j];
+                    Data[j, index] = Convert(v[j]);
                 }
             }
             else
@@ -115,7 +153,7 @@ namespace LinearAlgebra
         {
             if (index >= 0 && index < ColumnSize)
             {
-                var result = new List<Fraction>();
+                var result = new List<double>();
                 for (int i = 0; i < StringSize; i++)
                     result.Add(Data[i, index]);
                 return new Vector(result);
@@ -126,7 +164,7 @@ namespace LinearAlgebra
 
         public void DeleteColumn(int index)
         {
-            var newData = new Fraction[StringSize, ColumnSize - 1];
+            var newData = new double[StringSize, ColumnSize - 1];
             for (int i = 0; i < Data.GetLength(0); i++)
             {
                 for (int j = 0; j < index; j++)
@@ -147,19 +185,19 @@ namespace LinearAlgebra
 
         public Matrix AddColumn(Vector b)
         {
-            var newData = new Fraction[b.Size, ColumnSize + 1];
+            var newData = new double[b.Size, ColumnSize + 1];
             if (StringSize != 0 && StringSize != b.Size)
                 throw new ArgumentException("Add vector: vector and matrix are different size");
             for (int i = 0; i < Data.GetLength(0); i++)
             {
                 for (int j = 0; j < Data.GetLength(1); j++)
                 {
-                    newData[i, j] = Data[i, j];
+                    newData[i, j] = Convert(Data[i, j]);
                 }
             }
             for(int i = 0; i < b.Size; i++)
             {
-                newData[i, ColumnSize] = b[i];
+                newData[i, ColumnSize] = Convert(b[i]);
             }
             return new Matrix(newData);
         }
@@ -179,12 +217,12 @@ namespace LinearAlgebra
 
         public Matrix Transpose()
         {
-            var newData = new Fraction[ColumnSize, StringSize];
+            var newData = new double[ColumnSize, StringSize];
             for (int i = 0; i < Data.GetLength(1); i++)
             {
                 for (int j = 0; j < Data.GetLength(0); j++)
                 {
-                    newData[i, j] = Data[j, i];
+                    newData[i, j] = Convert(Data[j, i]);
                 }
             }
             return new Matrix(newData);
@@ -200,7 +238,7 @@ namespace LinearAlgebra
             }
         }
 
-        public void DeleteZeroStrings()
+        public Matrix DeleteZeroStrings()
         {
             var indexes = new HashSet<double>();
             for(int i = 0; i < StringSize; i++)
@@ -209,7 +247,7 @@ namespace LinearAlgebra
                 if (v.All(x => x == 0))
                     indexes.Add(i);
             }
-            var newData = new Fraction[StringSize - indexes.Count, ColumnSize];
+            var newData = new double[StringSize - indexes.Count, ColumnSize];
             var newData_i = 0;
             for (int i = 0; i < StringSize; i++)
             {
@@ -222,14 +260,14 @@ namespace LinearAlgebra
                     newData_i++;
                 }
             }
-            Data = newData;
+            return new Matrix(newData);
         }
 
         public static Matrix operator *(Matrix a, Matrix b)
         {
             if (a.ColumnSize != b.StringSize)
                 throw new ArgumentException("Wrong size of matrixes");
-            var result = new Fraction[a.StringSize, b.ColumnSize];
+            var result = new double[a.StringSize, b.ColumnSize];
             for(int i = 0; i < a.StringSize; i++)
             {
                 for(int j = 0; j < b.ColumnSize; j++)
@@ -244,7 +282,7 @@ namespace LinearAlgebra
         {
             if (a.StringSize != b.StringSize || a.ColumnSize != b.ColumnSize)
                 throw new ArgumentException("Wrong size of matrixes");
-            var result = new Fraction[a.StringSize, a.ColumnSize];
+            var result = new double[a.StringSize, a.ColumnSize];
             for (int i = 0; i < a.StringSize; i++)
             {
                 for (int j = 0; j < a.ColumnSize; j++)
@@ -255,9 +293,14 @@ namespace LinearAlgebra
             return new Matrix(result);
         }
 
-        public static Matrix operator *(Fraction t, Matrix a)
+        public static Matrix operator -(Matrix a, Matrix b)
         {
-            var result = new Fraction[a.StringSize, a.ColumnSize];
+            return a + (-1) * b;
+        }
+
+        public static Matrix operator *(double t, Matrix a)
+        {
+            var result = new double[a.StringSize, a.ColumnSize];
             for (int i = 0; i < a.StringSize; i++)
             {
                 for (int j = 0; j < a.ColumnSize; j++)
@@ -272,7 +315,7 @@ namespace LinearAlgebra
         {
             if (a.ColumnSize != b.Size)
                 throw new ArgumentException("Wrong size of matrixes");
-            var result = new Fraction[a.StringSize];
+            var result = new double[a.StringSize];
             for (int i = 0; i < a.StringSize; i++)
             {
                 result[i] = a.GetString(i) * b;
@@ -288,7 +331,7 @@ namespace LinearAlgebra
             {
                 for (int j = 0; j < a.ColumnSize; j++)
                 {
-                    if (a[i, j] != b[i, j])
+                    if (Math.Abs(a[i, j] - b[i, j]) > 1e-3)
                         return false;
                 }
             }
@@ -306,17 +349,28 @@ namespace LinearAlgebra
             return this == x;
         }
 
-        public void Print(int usedColumns = -1)
+        public void Print(int usedColumns = 0)
         {
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
+            if (usedColumns == 0)
+                usedColumns = ColumnSize;
             for (int i = 0; i < Data.GetLength(0); i++)
             {
                 for (int j = 0; j < Data.GetLength(1); j++)
                 {
-                    if (usedColumns == j)
-                        Console.Write("|" + Data[i, j] + "\t");
+                    var value = Math.Round(Data[i, j], 3);
+                    if (j % usedColumns == 0 && j != 0)
+                    {
+                        Console.Write("\t|\t" + value + "\t");
+                    }
+                    else if ((j + 1) % usedColumns == 0)
+                    {
+                        Console.Write(value);
+                    }
                     else
-                        Console.Write(Data[i,j] + "\t");
+                    {
+                        Console.Write(value + "\t");
+                    }
                 }
                 Console.WriteLine();
             }
@@ -333,20 +387,35 @@ namespace LinearAlgebra
             cascade.Print(source[0].ColumnSize);
         }
 
+        public string GetLatexNotation()
+        {
+            var result = @"$\begin{pmatrix}" + "\n";
+            for (int i = 0; i < Data.GetLength(0); i++)
+            {
+                for (int j = 0; j < Data.GetLength(1); j++)
+                {
+                    var split = (j < Data.GetLength(1) - 1 ? " & " : @" \\" + "\n");
+                    result += Math.Round(Data[i, j], 3) + split;
+                }
+            }
+            result += @"\end{pmatrix}$";
+            return result;
+        }
+
         private int GetRank()
         {
             var stepwiseMatrix = GaussJordanMethod.IdentityForm(this, false);
             return stepwiseMatrix.StringSize;
         }
 
-        private Fraction GetDeterminant()
+        private double GetDeterminant()
         {
             if (!IsSquare)
                 throw new ArgumentException("Matrix must be squared");
             else
             {
                 var stepwiseMatrix = GaussJordanMethod.StepwiseForm(this, false);
-                Fraction determinant = 1;
+                double determinant = 1;
                 for (int i = 0; i < StringSize; i++)
                 {
                     determinant *= stepwiseMatrix.Data[i, i];
@@ -357,15 +426,75 @@ namespace LinearAlgebra
 
         public Matrix GetSubMatrix(int start, int end)
         {
-            var result = new Fraction[StringSize, end - start];
+            var result = new double[StringSize, end - start];
             for(int i = 0; i < StringSize; i++)
             {
                 for(int j = start, s = 0; j < end; j++, s++)
                 {
-                    result[i, s] = Data[i, j];
+                    result[i, s] = Convert(Data[i, j]);
                 }
             }
             return new Matrix(result);
+        }
+
+        public Matrix Normilize()
+        {
+            double maxValue = 0;
+            for(int i = 0; i < StringSize; i++)
+            {
+                for(int j = 0; j < ColumnSize; j++)
+                {
+                    if(Math.Abs(Data[i, j]) > maxValue)
+                    {
+                        maxValue = Math.Abs(Data[i, j]);
+                    }
+                }
+            }
+            return (1 / maxValue) * this;
+        }
+
+        private bool IsMatrixDiagonal()
+        {
+            for (int i = 0; i < Data.GetLength(0); i++)
+            {
+                for (int j = 0; j < Data.GetLength(1); j++)
+                {
+                    if (i != j && Data[i, j] != 0)
+                        return false;
+                }
+            }
+            return true;
+        }
+
+        public static Matrix GetDiagomolizedMatrix(List<double> eigenvalues, int size)
+        {
+            Matrix result = new Matrix(size, size);
+            for (int i = 0; i < eigenvalues.Count; i++)
+            {
+                result[i, i] = eigenvalues[i];
+            }
+            return result;
+        }
+
+        public Matrix Pow(int degree)
+        {
+            var temp = this;
+            for (int i = 0; i < degree - 1; i++)
+            {
+                temp = temp * this;
+            }
+            return temp;
+        }
+
+        public static Matrix GetRandomMatrix(int stringSize, int columnSize)
+        {
+            var matrix = new Matrix();
+            for(int i = 0; i < columnSize; i++)
+            {
+                var vector = Vector.GetRandomVector(stringSize, 2);
+                matrix = matrix.AddColumn(vector);
+            }
+            return matrix;
         }
     }
 }
