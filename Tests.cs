@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace LinearAlgebra
+namespace LinearAlgebra.Tests
 {
     [TestFixture]
     class Tests
@@ -147,14 +147,25 @@ namespace LinearAlgebra
         [Test]
         public static void SystemWithLinearManifold2()
         {
-            var matrix = new Matrix(new Vector(1, 0, 0, 0),
-                                    new Vector(0, 0, 0, 0),
-                                    new Vector(1, 0, 0, 0),
-                                    new Vector(0, 0, 0, 1));
+            var matrix = new Matrix(    new Vector(1, 1, 3, -2, 3),
+                                        new Vector(2, 2, 4, -1, 3),
+                                        new Vector(3, 3, 5, -2, 3),
+                                        new Vector(2, 2, 8, -3, 9));
             var b = new Vector(0, 0, 0, 0);
 
             var solution = GaussJordanMethod.Solve(matrix, b, false);
-            Assert.AreEqual(solution.ToString(), "[0, 0, 0, 0] + <[0, 1, 0, 0],[0, 0, 1, 0]>");
+            Assert.AreEqual(solution.ToString(), "[0, 0, 0, 0, 0] + <[-1, 1, 0, 0, 0],[1.5, 0, -1.5, 0, 1]>");
+        }
+
+        [Test]
+        public static void SystemWithLinearManifold3()
+        {
+            var matrix = new Matrix(new Vector(1, 0, 0, 0, 0),
+                                        new Vector(0, 1, 0, 0, 0));
+            var b = new Vector(0, 0);
+
+            var solution = GaussJordanMethod.Solve(matrix, b, false);
+            Assert.AreEqual(solution.ToString(), "[0, 0, 0, 0, 0] + <[0, 0, 1, 0, 0],[0, 0, 0, 1, 0],[0, 0, 0, 0, 1]>");
         }
 
         [Test]
@@ -215,7 +226,7 @@ namespace LinearAlgebra
                                     new Vector(2, 3, 4));
             var linear_operator = new LinearOperator(matrix);
             var eval = linear_operator.GetEigenvalues();
-            Assert.AreEqual(new double[] { 0, 0, 1 }, eval.ToArray());
+            Assert.AreEqual(new double[] { 1, 0, 0 }, eval.ToArray());
         }
 
         [Test]
@@ -426,13 +437,13 @@ namespace LinearAlgebra
         [Test]
         public static void SolveEquation()
         {
-            var equation = new Vector(6, -7, 0, 1);
-            var roots = Polynomial.Solve(equation);
+            var equation = new Polynomial(6, -7, 0, 1);
+            var roots = equation.Solve();
             Assert.IsTrue(roots.Count == 3);
             Assert.IsTrue(roots.Contains(1) && roots.Contains(2) && roots.Contains(-3));
 
-            equation = new Vector(-3, 0, 1);
-            roots = Polynomial.Solve(equation);
+            equation = new Polynomial(-3, 0, 1);
+            roots = equation.Solve();
             Assert.IsTrue(roots.Count == 2);
             Assert.IsTrue(roots.Contains(1.732) && roots.Contains(-1.732));
         }
@@ -446,8 +457,20 @@ namespace LinearAlgebra
                                     new Vector(-2, 0, -1, -1));
             var linOperator = new LinearOperator(matrix);
             var characteristicPolynomial = linOperator.GetCharacteristicPolynomial();
-            Console.WriteLine(characteristicPolynomial);
-            Assert.AreEqual(new Vector(-10, 3, 2, 1, 1), characteristicPolynomial);
+            Assert.AreEqual(new Polynomial(-10, 3, 2, 1, 1), characteristicPolynomial);
+        }
+
+        [Test]
+        public static void JordanNormalForm()
+        {
+            var matrix = new Matrix(new Vector(0, -1, 2, -1, 0),
+                                        new Vector(-2, -1, 1, -1, 0),
+                                        new Vector(-1, -1, 0, -1, 2),
+                                        new Vector(1, -3, 3, -3, 4),
+                                        new Vector(0, -1, 1, -1, 1));
+            var linearOperator = new LinearOperator(matrix);
+            var j = linearOperator.JordanNormalForm();
+            Assert.AreEqual(matrix, j[0] * j[1] * j[2]);
         }
     }
 }

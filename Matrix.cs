@@ -57,9 +57,9 @@ namespace LinearAlgebra
         public Matrix(double [,] matrix)
         {
             Data = new double[matrix.GetLength(0), matrix.GetLength(1)];
-            for(int i = 0;i < matrix.GetLength(0);i++)
+            for(int i = 0;i < matrix.GetLength(0); i++)
             {
-                for(int j = 0;j < matrix.GetLength(1); j++)
+                for(int j = 0; j < matrix.GetLength(1); j++)
                 {
                     Data[i, j] = Convert(matrix[i, j]);
                 }
@@ -244,7 +244,7 @@ namespace LinearAlgebra
             for(int i = 0; i < StringSize; i++)
             {
                 var v = GetString(i);
-                if (v.All(x => x == 0))
+                if (v.IsZero)
                     indexes.Add(i);
             }
             var newData = new double[StringSize - indexes.Count, ColumnSize];
@@ -351,7 +351,6 @@ namespace LinearAlgebra
 
         public void Print(int usedColumns = 0)
         {
-            CultureInfo.CurrentCulture = new CultureInfo("en-US");
             if (usedColumns == 0)
                 usedColumns = ColumnSize;
             for (int i = 0; i < Data.GetLength(0); i++)
@@ -361,15 +360,24 @@ namespace LinearAlgebra
                     var value = Math.Round(Data[i, j], 3);
                     if (j % usedColumns == 0 && j != 0)
                     {
-                        Console.Write("\t|\t" + value + "\t");
+                        if(double.IsNaN(value))
+                            Console.Write("\t|\t \t");
+                        else
+                            Console.Write("\t|\t" + value + "\t");
                     }
                     else if ((j + 1) % usedColumns == 0)
                     {
-                        Console.Write(value);
+                        if (double.IsNaN(value))
+                            Console.Write(" ");
+                        else
+                            Console.Write(value);
                     }
                     else
                     {
-                        Console.Write(value + "\t");
+                        if (double.IsNaN(value))
+                            Console.Write(" \t");
+                        else
+                            Console.Write(value + "\t");
                     }
                 }
                 Console.WriteLine();
@@ -377,28 +385,26 @@ namespace LinearAlgebra
             Console.WriteLine();
         }
 
-        public static void PrintMany(params Matrix[] source)
+        public string GetLatexNotation(int usedColumns = 0)
         {
-            var cascade = new Matrix(source[0].Data);
-            for(int i = 1; i < source.Length; i++)
-            {
-                cascade = cascade.AddMatrix(source[i]);
-            }
-            cascade.Print(source[0].ColumnSize);
-        }
-
-        public string GetLatexNotation()
-        {
-            var result = @"$\begin{pmatrix}" + "\n";
+            var result = @"\\" + "\n" + @"$\begin{pmatrix}" + "\n";
             for (int i = 0; i < Data.GetLength(0); i++)
             {
                 for (int j = 0; j < Data.GetLength(1); j++)
                 {
-                    var split = (j < Data.GetLength(1) - 1 ? " & " : @" \\" + "\n");
-                    result += Math.Round(Data[i, j], 3) + split;
+                    var value = Math.Round(Data[i, j], 3);
+                    string split;
+                    if (usedColumns != 0 && (j + 1) % usedColumns == 0 && j < Data.GetLength(1) - 1)
+                        split = " & | & ";
+                    else
+                        split = (j < Data.GetLength(1) - 1) ? " & " : @" \\" + "\n";
+                    if (double.IsNaN(value))
+                        result += " " + split;
+                    else
+                        result += value + split;
                 }
             }
-            result += @"\end{pmatrix}$";
+            result += @"\end{pmatrix}$" + "\n" + @"\\";
             return result;
         }
 
@@ -495,6 +501,43 @@ namespace LinearAlgebra
                 matrix = matrix.AddColumn(vector);
             }
             return matrix;
+        }
+
+        public double Trace()
+        {
+            if(!IsSquare)
+                throw new InvalidOperationException();
+            var sum = 0d;
+            for(int i = 0; i < ColumnSize; i++)
+            {
+                sum += Data[i, i];
+            }
+            return sum;
+        }
+
+        public static Matrix BuildByDiagonalSquareBlocks(List<Matrix> blocks)
+        {
+            var columnsize = 0;
+            var stringsize = 0;
+            foreach(var block in blocks)
+            {
+                columnsize += block.ColumnSize;
+                stringsize += block.StringSize;
+            }
+            Matrix result = new Matrix(stringsize, columnsize);
+            var startPos = 0;
+            foreach(var block in blocks)
+            {
+                for(int i = 0; i < block.StringSize; i++)
+                {
+                    for(int j = 0; j < block.ColumnSize; j++)
+                    {
+                        result[startPos + i, startPos + j] = block[i, j];
+                    }
+                }
+                startPos += block.StringSize;
+            }
+            return result;
         }
     }
 }

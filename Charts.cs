@@ -66,7 +66,6 @@ namespace LinearAlgebra
             }
         }
 
-
         private static Color GetColor(double value)
         {
             if (value > 1)

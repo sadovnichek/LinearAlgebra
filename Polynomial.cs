@@ -8,7 +8,19 @@ namespace LinearAlgebra
 {
     public class Polynomial
     {
-        private static double FindBound(Vector coefficients)
+        private Vector coefficients;
+
+        public Polynomial(Vector coefficients)
+        {
+            this.coefficients = coefficients;
+        }
+
+        public Polynomial(params double[] coefficients)
+        {
+            this.coefficients = new Vector(coefficients);
+        }
+
+        private double FindBound()
         {
             double max = -1;
             for(int i = 0; i < coefficients.Size - 1; i++)
@@ -54,11 +66,12 @@ namespace LinearAlgebra
         }
 
         // с учетом кратности
-        public static List<double> Solve(Vector coefficients)
+        public List<double> Solve()
         {
-            var bound = FindBound(coefficients);
+            var bound = FindBound();
             var epsilon = 1e-4;
-            var roots = new List<double>();
+            var roots = new Dictionary<double, int>(); // <корень, его кратность>
+            var result = new List<double>();
             for (var x = -bound; x <= bound; x += epsilon)
             {
                 x = Math.Round(x, 4);
@@ -67,23 +80,28 @@ namespace LinearAlgebra
                 if (left == 0)
                 {
                     var multiplicity = GetRootMultiplicity(coefficients, x);
-                    roots.AddRange(Enumerable.Repeat(x, multiplicity));
+                    roots.Add(x, multiplicity);
                 } 
                 else if (Math.Sign(left) != Math.Sign(right) && left * right != 0)
                 {
                     var root = Math.Round(x + 0.5 * epsilon, 4);
                     var multiplicity = GetRootMultiplicity(coefficients, root);
-                    roots.AddRange(Enumerable.Repeat(root, multiplicity));
+                    roots.Add(root, multiplicity);
                 } 
             }
-            if (roots.Count != coefficients.Size - 1)
+            var sorted = roots.OrderBy(x => x.Value);
+            foreach(var root in sorted)
+            {
+                result.AddRange(Enumerable.Repeat(root.Key, root.Value));
+            }
+            if (result.Count != coefficients.Size - 1)
                 throw new ArgumentException("Equation has a complex roots");
-            return roots;
+            return result;
         }
 
-        public static void Print(Vector coefficients)
+        public override string ToString()
         {
-            var output = "";
+            var output = "$";
             for(int i = 0; i < coefficients.Size; i++)
             {
                 var currentCoefficient = coefficients[i];
@@ -102,8 +120,8 @@ namespace LinearAlgebra
                                 output += "- ";
                                 currentCoefficient = Math.Abs(currentCoefficient);
                             }
-                            if (currentCoefficient == 1)
-                                output += "x ";
+                            if (Math.Abs(currentCoefficient) == 1)
+                                output += (currentCoefficient > 0 ? "" : "-") + "x ";
                             else
                                 output += currentCoefficient + "x ";
                         }
@@ -121,22 +139,22 @@ namespace LinearAlgebra
                                 output += "- ";
                                 currentCoefficient = Math.Abs(currentCoefficient);
                             }
-                            if (currentCoefficient == 1)
-                                output += "x^" + i + " ";
+                            if (Math.Abs(currentCoefficient) == 1)
+                                output += (currentCoefficient > 0 ? "" : "-") + "x^{" + i + "} ";
                             else
-                                output += currentCoefficient + "x^" + i + " ";
+                                output += currentCoefficient + "x^{" + i + "} ";
                         }
                         else
                         {
-                            if (currentCoefficient == 1)
-                                output += "x^" + i + " ";
+                            if (Math.Abs(currentCoefficient) == 1)
+                                output += (currentCoefficient > 0 ? "" : "-") + "x^{" + i + "} ";
                             else
-                                output += currentCoefficient + "x^" + i + " ";
+                                output += currentCoefficient + "x^{" + i + "} ";
                         }
                     }
                 }
             }
-            Console.WriteLine(output);
+            return output + "$";
         }
 
         public static Vector Multiply(Vector a, Vector b)
@@ -177,6 +195,14 @@ namespace LinearAlgebra
                 result.Add(sum);
             }
             return new Vector(result);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Polynomial))
+                return false;
+            Polynomial other = (Polynomial)obj;
+            return this.coefficients.Equals(other.coefficients);
         }
     }
 }

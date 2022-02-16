@@ -7,9 +7,12 @@ namespace LinearAlgebra
     public class LinearOperator
     {
         public Matrix matrix;
+        private int Size => matrix.ColumnSize;
 
         public LinearOperator(Matrix matrix)
         {
+            if (!matrix.IsSquare)
+                throw new ArgumentException("Matrix of linear operator must be square");
             this.matrix = matrix;
         }
 
@@ -82,48 +85,28 @@ namespace LinearAlgebra
             Console.WriteLine("dim Ker A = " + kernelDimension);
         }
 
-        // Метод Крылова
-        public Vector GetCharacteristicPolynomial()
+        // Метод Леверье - Фаддеева
+        public Polynomial GetCharacteristicPolynomial()
         {
-            var coefficients = new Vector(1d);
-            var effort = 1;
-            var y = new Vector();
-            while (coefficients.Size != matrix.StringSize + 1)
+            Matrix E = Matrix.GetIdentityMatrix(Size);
+            var coefficients = new List<double>() { 1 };
+            var Mk = E;
+            for(int k = 1; k <= Size; k++)
             {
-                if(effort <= matrix.StringSize)
-                    y = new Vector(Enumerable.Repeat(0d, matrix.StringSize - effort)
-                                                    .Append(1)
-                                                    .Concat(Enumerable.Repeat(0d, effort - 1))
-                                                    .Reverse());
-                else
-                    y = Vector.GetRandomVector(matrix.StringSize, 3);
-                var A = new Matrix();
-                A = A.AddColumn(y);
-                for (int i = 1; i < matrix.ColumnSize; i++)
-                {
-                    var test_y = matrix * y;
-                    var test = A.AddColumn(test_y).Transpose();
-                    if (test.Rank != test.StringSize)
-                        break;
-                    y = matrix * y;
-                    A = A.AddColumn(y);
-                }
-                var b = matrix * y;
-                var solution = new Vector(((-1) * GaussJordanMethod.Solve(A, b, false))
-                                                .Append(1));
-                if (solution.Size > coefficients.Size)
-                    coefficients = solution;
-                else if(coefficients != solution)
-                    coefficients = Polynomial.Multiply(coefficients, solution);
-                effort++;
+                Matrix M = matrix * Mk;
+                var coefficient = -1d / k * M.Trace();
+                coefficients.Add(coefficient);
+                Mk = M + coefficient * E;
             }
-            return Math.Pow(-1, matrix.ColumnSize) * coefficients;
+            coefficients.Reverse();
+            var result = Math.Pow(-1, Size) * new Vector(coefficients);
+            return new Polynomial(result);
         }
 
         public List<double> GetEigenvalues()
         {
-            var mininalPolynomial = GetCharacteristicPolynomial();
-            return Polynomial.Solve(mininalPolynomial);
+            var polynomial = GetCharacteristicPolynomial();
+            return polynomial.Solve();
         }
 
         public List<Vector> GetEigenvectors(double eigenvalue)
@@ -139,6 +122,7 @@ namespace LinearAlgebra
         public Matrix[] Diagonolize()
         {
             var eigenvalues = GetEigenvalues();
+            eigenvalues.Sort();
             var diagonolizedMatrix = Matrix.GetDiagomolizedMatrix(eigenvalues, matrix.StringSize);
             var transitionMatrix = new Matrix();
             foreach (var e in eigenvalues.Distinct())
@@ -150,6 +134,72 @@ namespace LinearAlgebra
             if (transitionMatrix.Transpose().Rank != matrix.ColumnSize)
                 throw new InvalidOperationException("Cannot be diagonolized. Use Jordan normal form");
             return new Matrix[] { transitionMatrix, diagonolizedMatrix, MatrixEquation.GetInverseMatrix(transitionMatrix) };
+        }
+
+        private Matrix GetJordanCell(int cellSize, double eigenvalue)
+        {
+            var result = new Matrix(cellSize, cellSize);
+            for(int i = 0; i < cellSize - 1; i++)
+            {
+                result[i + 1, i] = 1;
+            }
+            for(int i = 0; i < cellSize; i++)
+            {
+                result[i, i] = eigenvalue;
+            }
+            return result;
+        }
+
+        public Matrix[] JordanNormalForm()
+        {
+            var eigenvalues = GetEigenvalues().Distinct().ToList();
+            Matrix E = Matrix.GetIdentityMatrix(matrix.StringSize);
+            var lastChangedMatrix = new Matrix();
+            var jordanCells = new List<Matrix>();
+            var transitionMatrix = new Matrix();
+            Matrix layer;
+            for (int i = 0; i < eigenvalues.Count(); i++)
+            {
+                var A = matrix - eigenvalues[i] * E;
+                if (i == 0)
+                    layer = E.AddMatrix(A.Transpose());
+                else
+                    layer = lastChangedMatrix.AddMatrix(lastChangedMatrix * A.Transpose());
+                layer = GaussJordanMethod.StepwiseForm(layer, false, Size);
+                lastChangedMatrix = layer.GetSubMatrix(layer.ColumnSize - Size, layer.ColumnSize);
+                if(i == eigenvalues.Count() - 1)
+                {
+                    while (lastChangedMatrix != new Matrix(Size, Size))
+                    {
+                        layer = layer.AddMatrix(lastChangedMatrix * A.Transpose());
+                        layer = GaussJordanMethod.StepwiseForm(layer, false, Size);
+                        lastChangedMatrix = layer.GetSubMatrix(layer.ColumnSize - Size, layer.ColumnSize);
+                    }
+                }
+                else
+                {
+                    while (lastChangedMatrix.Rank != (lastChangedMatrix * A.Transpose()).Rank)
+                    {
+                        layer = layer.AddMatrix(lastChangedMatrix * A.Transpose());
+                        layer = GaussJordanMethod.StepwiseForm(layer, false, Size);
+                        lastChangedMatrix = layer.GetSubMatrix(layer.ColumnSize - Size, layer.ColumnSize);
+                    }
+                }
+                var jordanTable = new JordanTable(layer, Size);
+                var nillLayers = jordanTable.GetNillLayers(false);
+                foreach(var nilllayer in nillLayers)
+                {
+                    var jordanCellSize = nilllayer.Count();
+                    var jordanCell = GetJordanCell(jordanCellSize, eigenvalues[i]);
+                    jordanCells.Add(jordanCell);
+                    foreach(var vector in nilllayer)
+                    {
+                        transitionMatrix = transitionMatrix.AddColumn(vector);
+                    }
+                }
+            }
+            var result = Matrix.BuildByDiagonalSquareBlocks(jordanCells);
+            return new Matrix[] { transitionMatrix, result, MatrixEquation.GetInverseMatrix(transitionMatrix) };
         }
     }
 }

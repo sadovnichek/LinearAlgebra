@@ -12,6 +12,7 @@ namespace LinearAlgebra
         public int Size => coordinates.Count();
         public double Lenght => Math.Sqrt((this * this));
 
+        public bool IsZero => coordinates.Sum(x => Math.Abs(x)) == 0;
         private static double Convert(double value)
         {
             var x = Math.Round(value, 6);

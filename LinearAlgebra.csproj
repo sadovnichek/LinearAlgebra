@@ -63,6 +63,7 @@
     <Compile Include="Charts.cs" />
     <Compile Include="GaussJordanMethod.cs" />
     <Compile Include="HeatMapData.cs" />
+    <Compile Include="JordanTable.cs" />
     <Compile Include="LinearManifold.cs" />
     <Compile Include="LinearOperator.cs" />
     <Compile Include="Matrix.cs" />
