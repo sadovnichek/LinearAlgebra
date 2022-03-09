@@ -198,5 +198,13 @@ namespace LinearAlgebra.Methods
             }
             return new Vector(result);
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is Polynomial other)
+                return this.Coefficients.Equals(other.Coefficients);
+            else
+                return false;
+        }
     }
 }

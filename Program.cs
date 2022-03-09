@@ -3,8 +3,6 @@ using LinearAlgebra.Models;
 using LinearAlgebra.Support;
 using NUnit.Framework;
 using System;
-using System.Globalization;
-using System.Linq;
 
 namespace LinearAlgebra
 {

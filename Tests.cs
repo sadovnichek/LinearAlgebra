@@ -8,7 +8,7 @@ using LinearAlgebra.Support;
 namespace LinearAlgebra.Tests
 {
     [TestFixture]
-    class Tests
+    internal class Tests
     {
         [Test]
         public static void DotProduct()
