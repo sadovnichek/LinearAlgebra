@@ -1,12 +1,15 @@
+using LinearAlgebra.Models;
+using LinearAlgebra.Support;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
-namespace LinearAlgebra
+namespace LinearAlgebra.Methods
 {
     public class LinearOperator
     {
-        public Matrix matrix;
+        public readonly Matrix matrix;
         private int Size => matrix.ColumnSize;
 
         public LinearOperator(Matrix matrix)
@@ -20,11 +23,8 @@ namespace LinearAlgebra
         {
             var zeroVector = new Vector(matrix.StringSize);
             var solution = GaussJordanMethod.Solve(matrix, zeroVector, false);
-            if (solution is LinearManifold)
-            {
-                var result = solution as LinearManifold;
-                return result.GetSubspaceBasis();
-            }
+            if (solution is LinearManifold linearManifold)
+                return linearManifold.GetSubspaceBasis();
             throw new Exception("FindKernelBasis: result must be a linear manifold");
         }
 
@@ -55,7 +55,7 @@ namespace LinearAlgebra
         {
             var identityMatrix = Matrix.GetIdentityMatrix(matrix.StringSize);
             var fullMatrix = identityMatrix.AddMatrix(matrix.Transpose());
-            fullMatrix = GaussJordanMethod.StepwiseForm(fullMatrix, false, matrix.ColumnSize);
+            fullMatrix = GaussJordanMethod.StepwiseForm(fullMatrix, false, activeBlockSize: matrix.ColumnSize);
             fullMatrix.Print(matrix.ColumnSize);
             var lastMatrix = fullMatrix.GetSubMatrix(fullMatrix.ColumnSize - matrix.ColumnSize, fullMatrix.ColumnSize);
             var preLastMatrix = fullMatrix.GetSubMatrix(fullMatrix.ColumnSize - 2*matrix.ColumnSize, 
@@ -114,7 +114,7 @@ namespace LinearAlgebra
             var result = new List<Vector>();
             Matrix E = Matrix.GetIdentityMatrix(matrix.ColumnSize);
             Matrix A = matrix - eigenvalue * E;
-            LinearManifold fundamentalSystem = (LinearManifold)GaussJordanMethod.Solve(A, new Vector(matrix.ColumnSize), false);
+            var fundamentalSystem = (LinearManifold)GaussJordanMethod.Solve(A, new Vector(matrix.ColumnSize), false);
             result.AddRange(fundamentalSystem.GetSubspaceBasis());
             return result;
         }
@@ -150,44 +150,81 @@ namespace LinearAlgebra
             return result;
         }
 
-        public Matrix[] JordanNormalForm()
+        private Matrix GetFirstBlock(int iteration, TexFile file, Matrix A, Matrix lastChangedMatrix)
         {
-            var eigenvalues = GetEigenvalues().Distinct().ToList();
             Matrix E = Matrix.GetIdentityMatrix(matrix.StringSize);
+            Matrix block;
+            if (iteration == 0)
+            {
+                block = E.AddMatrix(A.Transpose());
+                file.Write($"Составим матрицу $(E | A_{iteration + 1}^T)$:");
+            }
+            else
+            {
+                block = lastChangedMatrix.AddMatrix(lastChangedMatrix * A.Transpose());
+                file.Write($@"Составим матрицу $(B | B \cdot A_{iteration + 1}^T)$:");
+                file.Write("Где B = " + lastChangedMatrix.GetLatexNotation());
+            }
+            return block;
+        }
+
+        public Matrix[] JordanNormalForm(TexFile file)
+        {
+            var characteristicPolynomial = GetCharacteristicPolynomial();
+            var eigenvalues = characteristicPolynomial.Solve().Distinct().ToList();
             var lastChangedMatrix = new Matrix();
             var jordanCells = new List<Matrix>();
             var transitionMatrix = new Matrix();
-            Matrix layer;
             for (int i = 0; i < eigenvalues.Count(); i++)
             {
-                var A = matrix - eigenvalues[i] * E;
-                if (i == 0)
-                    layer = E.AddMatrix(A.Transpose());
-                else
-                    layer = lastChangedMatrix.AddMatrix(lastChangedMatrix * A.Transpose());
-                layer = GaussJordanMethod.StepwiseForm(layer, false, Size);
+                file.Write($"Текущее собственное значение $t_{i + 1} = {eigenvalues[i]}$. " + 
+                $"Кратность корня: {Polynomial.GetRootMultiplicity(characteristicPolynomial.Coefficients, eigenvalues[i])}");
+                var A = matrix - eigenvalues[i] * Matrix.GetIdentityMatrix(matrix.StringSize);
+                file.Write($"Рассматриваемая матрица $A_{i + 1} = A - t_{i + 1}E$:");
+                file.Write($"$A_{i + 1}$ = " + A.GetLatexNotation());
+                var layer = GetFirstBlock(i, file, A, lastChangedMatrix);
+                file.Write(layer.GetLatexNotation(Size));
+                file.Write("Приводим крайний правый блок к ступенчатому виду:");
+                layer = GaussJordanMethod.StepwiseForm(layer, true, file, Size);
                 lastChangedMatrix = layer.GetSubMatrix(layer.ColumnSize - Size, layer.ColumnSize);
-                if(i == eigenvalues.Count() - 1)
+                if(i == eigenvalues.Count() - 1) // в этом случае оператор нильпотентный
                 {
+                    file.Write("Это " + ((i == 0) ? "единственное " : "последнее ") + "собственное значение. Значит, условие остановки: крайний блок - нулевая матрица.");
                     while (lastChangedMatrix != new Matrix(Size, Size))
                     {
+                        file.Write($@"Дописываем справа матрицу $Y \cdot A_{i+1}^T$");
+                        file.Write("Где Y = " + lastChangedMatrix.GetLatexNotation());
                         layer = layer.AddMatrix(lastChangedMatrix * A.Transpose());
-                        layer = GaussJordanMethod.StepwiseForm(layer, false, Size);
+                        file.Write(layer.GetLatexNotation(Size));
+                        layer = GaussJordanMethod.StepwiseForm(layer, true, file, Size);
                         lastChangedMatrix = layer.GetSubMatrix(layer.ColumnSize - Size, layer.ColumnSize);
-                    }
+                    }                    
+                    if (lastChangedMatrix == new Matrix(Size, Size))
+                        file.Write("Крайний блок - нулевая матрица.");
                 }
                 else
                 {
                     while (lastChangedMatrix.Rank != (lastChangedMatrix * A.Transpose()).Rank)
                     {
+                        file.Write($@"Ранги двух крайних правых матриц не совпали. Дописываем справа матрицу $Y \cdot A_{i+1}^T$:");
+                        file.Write("Где Y = " + lastChangedMatrix.GetLatexNotation());
                         layer = layer.AddMatrix(lastChangedMatrix * A.Transpose());
-                        layer = GaussJordanMethod.StepwiseForm(layer, false, Size);
+                        file.Write(layer.GetLatexNotation(Size));
+                        layer = GaussJordanMethod.StepwiseForm(layer, true, file, Size);
                         lastChangedMatrix = layer.GetSubMatrix(layer.ColumnSize - Size, layer.ColumnSize);
                     }
+                    if(lastChangedMatrix.Rank == (lastChangedMatrix * A.Transpose()).Rank)
+                    {
+                        file.Write("Ранги двух крайних матриц совпали:");
+                        layer = layer.AddMatrix(lastChangedMatrix * A.Transpose());
+                        file.Write(layer.GetLatexNotation(Size));
+                    }
                 }
-                var jordanTable = new JordanTable(layer, Size);
-                var nillLayers = jordanTable.GetNillLayers(false);
-                foreach(var nilllayer in nillLayers)
+                file.Write("Составим жорданову таблицу и элементарными преобразованиями найдем базис данного корневого подпространства:");
+                var jordanTable = new JordanTable(layer, Size, file);
+                var nillLayers = jordanTable.GetNillLayers();
+                file.Write("Таким образом, базис данного подпространства образуют векторы:");
+                foreach (var nilllayer in nillLayers)
                 {
                     var jordanCellSize = nilllayer.Count();
                     var jordanCell = GetJordanCell(jordanCellSize, eigenvalues[i]);
@@ -195,6 +232,7 @@ namespace LinearAlgebra
                     foreach(var vector in nilllayer)
                     {
                         transitionMatrix = transitionMatrix.AddColumn(vector);
+                        file.Write(vector.GetLatexNotation());
                     }
                 }
             }

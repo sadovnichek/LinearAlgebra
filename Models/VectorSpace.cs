@@ -1,8 +1,9 @@
-﻿using System;
+﻿using LinearAlgebra.Methods;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LinearAlgebra
+namespace LinearAlgebra.Models
 {
     public enum AngleFormat
     {

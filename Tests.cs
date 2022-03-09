@@ -1,6 +1,9 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using LinearAlgebra.Methods;
+using LinearAlgebra.Models;
+using LinearAlgebra.Support;
 
 namespace LinearAlgebra.Tests
 {
@@ -189,6 +192,7 @@ namespace LinearAlgebra.Tests
             var matrix = new Matrix(new Vector(8, 9, 8),
                                     new Vector(2, 6, 3),
                                     new Vector(3, 0, 5));
+            var x = GaussJordanMethod.StepwiseForm(matrix, false);
             Assert.AreEqual(matrix.Determinant, 87);
         }
 
@@ -226,7 +230,7 @@ namespace LinearAlgebra.Tests
                                     new Vector(2, 3, 4));
             var linear_operator = new LinearOperator(matrix);
             var eval = linear_operator.GetEigenvalues();
-            Assert.AreEqual(new double[] { 1, 0, 0 }, eval.ToArray());
+            Assert.True(new HashSet<double> { 1, 0, 0 }.SetEquals(eval));
         }
 
         [Test]
@@ -463,14 +467,30 @@ namespace LinearAlgebra.Tests
         [Test]
         public static void JordanNormalForm()
         {
+            var file = new TexFile("./temp.tex");
             var matrix = new Matrix(new Vector(0, -1, 2, -1, 0),
-                                        new Vector(-2, -1, 1, -1, 0),
-                                        new Vector(-1, -1, 0, -1, 2),
-                                        new Vector(1, -3, 3, -3, 4),
-                                        new Vector(0, -1, 1, -1, 1));
+                                    new Vector(-2, -1, 1, -1, 0),
+                                    new Vector(-1, -1, 0, -1, 2),
+                                    new Vector(1, -3, 3, -3, 4),
+                                    new Vector(0, -1, 1, -1, 1));
             var linearOperator = new LinearOperator(matrix);
-            var j = linearOperator.JordanNormalForm();
+            var j = linearOperator.JordanNormalForm(file);
             Assert.AreEqual(matrix, j[0] * j[1] * j[2]);
+            file.Delete();
+        }
+
+        [TestCase(new double[] { 1, 1 }, "$ 1 + t $")]
+        [TestCase(new double[] { 2, -1, -1, 1 }, "$ 2 - t - t^{2} + t^{3} $")]
+        [TestCase(new double[] { 0, 2 }, "$ 2t $")]
+        [TestCase(new double[] { 1 }, "$ 1 $")]
+        [TestCase(new double[] { -5 }, "$ -5 $")]
+        [TestCase(new double[] { -1, -1, -1, -1, -1 }, "$ -1 - t - t^{2} - t^{3} - t^{4} $")]
+        [TestCase(new double[] { 16, -64, 104, -88, 41, -10, 1 }, "$ 16 - 64t + 104t^{2} - 88t^{3} + 41t^{4} - 10t^{5} + t^{6} $")]
+        [TestCase(new double[] { 2, -1, 0, -5 }, "$ 2 - t - 5t^{3} $")]
+        public static void PolynomialToString(double[] coefficients, string result)
+        {
+            var polynomial = new Polynomial(coefficients);
+            Assert.AreEqual(result, polynomial.ToString());
         }
     }
 }

@@ -1,10 +1,11 @@
-﻿using System;
+﻿using LinearAlgebra.Support;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace LinearAlgebra
+namespace LinearAlgebra.Models
 {
     public class Vector : IEnumerable<double>
     {
@@ -15,12 +16,7 @@ namespace LinearAlgebra
         public bool IsZero => coordinates.Sum(x => Math.Abs(x)) == 0;
         private static double Convert(double value)
         {
-            var x = Math.Round(value, 6);
-            if (Math.Abs(Math.Round(value) - x) <= 1e-3)
-                x = (int)Math.Round(x);
-            else if (Math.Abs(x) <= 1e-3)
-                x = 0;
-            return x;
+            return value;
         }
 
         public Vector(params double[] source)
@@ -153,7 +149,7 @@ namespace LinearAlgebra
             var result = @"$\begin{pmatrix}";
             for(int i = 0; i < Size; i++)
             {
-                result += coordinates[i] + ((i != Size - 1) ? ",& " : @"\end{pmatrix}$");
+                result += Math.Round(coordinates[i], 4) + ((i != Size - 1) ? ",& " : @"\end{pmatrix}$");
             }
             return result;
         }

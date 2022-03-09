@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace LinearAlgebra
+namespace LinearAlgebra.Support
 {
     public static class RandomProvider
     {

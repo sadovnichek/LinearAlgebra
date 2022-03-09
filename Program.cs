@@ -1,6 +1,8 @@
-﻿using NUnit.Framework;
+﻿using LinearAlgebra.Methods;
+using LinearAlgebra.Models;
+using LinearAlgebra.Support;
+using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
@@ -10,7 +12,6 @@ namespace LinearAlgebra
     {
         public static void Main()
         {
-            CultureInfo.CurrentCulture = new CultureInfo("en-US");
             try
             {
 

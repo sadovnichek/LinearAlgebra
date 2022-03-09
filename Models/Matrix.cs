@@ -1,14 +1,15 @@
-﻿using System;
+﻿using LinearAlgebra.Methods;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace LinearAlgebra
+namespace LinearAlgebra.Models
 {
     public class Matrix
     {
-        public double[,] Data;
+        public readonly double[,] Data;
 
         private int precision = 6;
 
@@ -162,7 +163,7 @@ namespace LinearAlgebra
                 throw new IndexOutOfRangeException();
         }
 
-        public void DeleteColumn(int index)
+        public Matrix DeleteColumn(int index)
         {
             var newData = new double[StringSize, ColumnSize - 1];
             for (int i = 0; i < Data.GetLength(0); i++)
@@ -180,7 +181,7 @@ namespace LinearAlgebra
                 }
             }
 
-            Data = newData;
+            return new Matrix(newData);
         }
 
         public Matrix AddColumn(Vector b)
@@ -326,7 +327,7 @@ namespace LinearAlgebra
         public static bool operator ==(Matrix a, Matrix b)
         {
             if (a.StringSize != b.StringSize || a.ColumnSize != b.ColumnSize)
-                throw new ArgumentException("Matrix equal: Matrices of different sizes");
+                return false;
             for (int i = 0; i < a.StringSize; i++)
             {
                 for (int j = 0; j < a.ColumnSize; j++)
@@ -341,6 +342,22 @@ namespace LinearAlgebra
         public static bool operator !=(Matrix a, Matrix b)
         {
             return !(a == b);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = (int)Data[0, 0];
+                for (int i = 0; i < StringSize; i++)
+                {
+                    for(var j = 0; j < ColumnSize; j++)
+                    {
+                        hashCode = (hashCode * 17) ^ (int)Data[i,j];
+                    }
+                }
+                return hashCode;
+            }
         }
 
         public override bool Equals(object obj)
@@ -360,7 +377,7 @@ namespace LinearAlgebra
                     var value = Math.Round(Data[i, j], 3);
                     if (j % usedColumns == 0 && j != 0)
                     {
-                        if(double.IsNaN(value))
+                        if (double.IsNaN(value))
                             Console.Write("\t|\t \t");
                         else
                             Console.Write("\t|\t" + value + "\t");
@@ -387,12 +404,12 @@ namespace LinearAlgebra
 
         public string GetLatexNotation(int usedColumns = 0)
         {
-            var result = @"\\" + "\n" + @"$\begin{pmatrix}" + "\n";
+            var result = @"$\begin{pmatrix}" + "\n";
             for (int i = 0; i < Data.GetLength(0); i++)
             {
                 for (int j = 0; j < Data.GetLength(1); j++)
                 {
-                    var value = Math.Round(Data[i, j], 3);
+                    var value = Math.Round(Data[i, j], 4);
                     string split;
                     if (usedColumns != 0 && (j + 1) % usedColumns == 0 && j < Data.GetLength(1) - 1)
                         split = " & | & ";
@@ -404,7 +421,7 @@ namespace LinearAlgebra
                         result += value + split;
                 }
             }
-            result += @"\end{pmatrix}$" + "\n" + @"\\";
+            result += @"\end{pmatrix}$";
             return result;
         }
 

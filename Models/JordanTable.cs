@@ -1,20 +1,22 @@
-﻿using System;
+﻿using LinearAlgebra.Methods;
+using LinearAlgebra.Support;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace LinearAlgebra
+namespace LinearAlgebra.Models
 {
-    public class JordanTable
+    internal class JordanTable
     {
         private Matrix jordanMatrix;
 
         private int size;
 
-        public JordanTable(Matrix layer, int size)
+        private TexFile file;
+
+        public JordanTable(Matrix layer, int size, TexFile file)
         {
             this.size = size;
+            this.file = file;
             var firstBlocks = layer.GetSubMatrix(0, layer.ColumnSize - size);
             var lastBlock = layer.GetSubMatrix(layer.ColumnSize - size, layer.ColumnSize);
             var result = new List<Vector>();
@@ -25,6 +27,7 @@ namespace LinearAlgebra
             }
             jordanMatrix = new Matrix(result);
             Shift();
+            file.Write(jordanMatrix.GetLatexNotation(size));
         }
 
         private Vector ShiftVectors(Vector vectorString)
@@ -61,27 +64,25 @@ namespace LinearAlgebra
             }
         }
 
-        private void Iterate(bool output)
+        private void Iterate()
         {
             while (true)
             {
-                var iterated = GaussJordanMethod.StepwiseForm(jordanMatrix, false, size);
+                var iterated = GaussJordanMethod.StepwiseForm(jordanMatrix, true, file, size, true);
                 if (iterated != jordanMatrix)
                 {
                     jordanMatrix = iterated;
                     Shift();
-                    if (output)
-                        jordanMatrix.Print(size);
                 }
                 else
                     break;
             }
         }
 
-        public List<List<Vector>> GetNillLayers(bool output)
+        public List<List<Vector>> GetNillLayers()
         {
             var result = new List<List<Vector>>();
-            Iterate(output);
+            Iterate();
             for (int i = 0; i < jordanMatrix.StringSize; i++)
             {
                 var vectorString = jordanMatrix.GetString(i);
@@ -96,11 +97,6 @@ namespace LinearAlgebra
                     result.Add(nillLayer);
             }
             return result;
-        }
-
-        public Matrix GetJordanTable()
-        {
-            return jordanMatrix;
         }
     }
 }

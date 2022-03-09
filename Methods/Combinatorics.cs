@@ -1,10 +1,8 @@
-﻿using System;
+﻿using LinearAlgebra.Models;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace LinearAlgebra
+namespace LinearAlgebra.Methods
 {
     public class Combinatorics
     {

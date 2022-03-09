@@ -48,6 +48,7 @@
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -60,30 +61,27 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Charts.cs" />
-    <Compile Include="GaussJordanMethod.cs" />
-    <Compile Include="HeatMapData.cs" />
-    <Compile Include="JordanTable.cs" />
-    <Compile Include="LinearManifold.cs" />
-    <Compile Include="LinearOperator.cs" />
-    <Compile Include="Matrix.cs" />
-    <Compile Include="MatrixEquation.cs" />
-    <Compile Include="Polynomial.cs" />
+    <Compile Include="Methods\GaussJordanMethod.cs" />
+    <Compile Include="Models\JordanTable.cs" />
+    <Compile Include="Support\TexFile.cs" />
+    <Compile Include="Models\LinearManifold.cs" />
+    <Compile Include="Methods\LinearOperator.cs" />
+    <Compile Include="Models\Matrix.cs" />
+    <Compile Include="Methods\MatrixEquation.cs" />
+    <Compile Include="Methods\Polynomial.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RandomProvider.cs" />
+    <Compile Include="Support\RandomProvider.cs" />
     <Compile Include="Tests.cs" />
-    <Compile Include="Vector.cs" />
-    <Compile Include="VectorSpace.cs" />
-    <Compile Include="Combinatorics.cs" />
+    <Compile Include="Models\Vector.cs" />
+    <Compile Include="Models\VectorSpace.cs" />
+    <Compile Include="Methods\Combinatorics.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="License-LGPL.txt" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
