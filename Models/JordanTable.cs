@@ -20,12 +20,12 @@ namespace LinearAlgebra.Models
             var firstBlocks = layer.GetSubMatrix(0, layer.ColumnSize - size);
             var lastBlock = layer.GetSubMatrix(layer.ColumnSize - size, layer.ColumnSize);
             var result = new List<Vector>();
-            for (int i = 0; i < lastBlock.StringSize; i++)
+            for (int i = 0; i < lastBlock.StringSize; i++) // берем те строки, у которых в последнем блоке - нулевой вектор
             {
                 if (lastBlock.GetString(i).IsZero)
                     result.Add(firstBlocks.GetString(i));
             }
-            jordanMatrix = new Matrix(result);
+            jordanMatrix = new Matrix(result); // создаём из таких строк матрицу
             Shift();
             file.Write(jordanMatrix.GetLatexNotation(size));
         }

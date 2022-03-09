@@ -41,13 +41,13 @@ namespace LinearAlgebra.Methods
             return result;
         }
 
-        public static Matrix StepwiseForm(Matrix m, bool output, TexFile file = null, int activeBlockSize = 0, bool jordan = false)
+        public static Matrix StepwiseForm(Matrix m, bool output, TexFile file = null, int activeBlockSize = 0, bool isJordanTable = false)
         {
             var copy = (double[,])m.Data.Clone();
             var prevoiusPrintedMatrix = new Matrix();
             var matrix = new Matrix(copy);
             activeBlockSize = (activeBlockSize == 0) ? matrix.ColumnSize : activeBlockSize; // 0 - значение по умолчанию
-            if (!jordan)
+            if (!isJordanTable)
                 matrix = OrderStrings(matrix, activeBlockSize);
             if (output && matrix != m)
             {
@@ -88,7 +88,7 @@ namespace LinearAlgebra.Methods
                     }
                 }
             }
-            if (!jordan)
+            if (!isJordanTable)
                 matrix = OrderStrings(matrix, activeBlockSize);
             if (output && prevoiusPrintedMatrix != matrix)
                 file.Write(matrix.GetLatexNotation(activeBlockSize));
